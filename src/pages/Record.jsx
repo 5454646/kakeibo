@@ -1,13 +1,99 @@
-import { Box, Heading, Text } from "@chakra-ui/react"
+import { useState } from "react";
+import { Box, Heading, Text } from "@chakra-ui/react";
 
-const Record = () => (
-  <Box p={6}>
-    <Heading size="lg" mb={4}>ダッシュボード</Heading>
-    <Text>今月の収支・残高・グラフの概要などを表示</Text>
-  </Box>
-)
+const Record = () => {
+  const [income, setIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
+  const [inputIncome, setInputIncome] = useState("");
+  const [inputExpense, setInputExpense] = useState("");
 
-export default Record
+  const balance = income - expense;
+  const maxAmount = Math.max(income, expense, 1); // 0割防止
+
+  const getBarWidth = (amount) => `${(amount / maxAmount) * 100}%`;
+
+  const addIncome = () => {
+    const num = Number(inputIncome);
+    if (num > 0) {
+      setIncome(income + num);
+      setInputIncome("");
+    }
+  };
+
+  const addExpense = () => {
+    const num = Number(inputExpense);
+    if (num > 0) {
+      setExpense(expense + num);
+      setInputExpense("");
+    }
+  };
+
+  return (
+    <Box maxW="480px" mx="auto" p={4} borderWidth="1px" borderRadius="md">
+      <Heading size="lg" mb={4}>今月の収支概要</Heading>
+
+      <Box mb={4}>
+        <label>
+          収入を追加:{" "}
+          <input
+            type="number"
+            min="0"
+            value={inputIncome}
+            onChange={(e) => setInputIncome(e.target.value)}
+            style={{ marginRight: 8 }}
+          />
+        </label>
+        <button onClick={addIncome}>追加</button>
+      </Box>
+
+      <Box mb={4}>
+        <label>
+          支出を追加:{" "}
+          <input
+            type="number"
+            min="0"
+            value={inputExpense}
+            onChange={(e) => setInputExpense(e.target.value)}
+            style={{ marginRight: 8 }}
+          />
+        </label>
+        <button onClick={addExpense}>追加</button>
+      </Box>
+
+      <Text mb={2}>収入: {income.toLocaleString()} 円</Text>
+      <Text mb={2}>支出: {expense.toLocaleString()} 円</Text>
+      <Text mb={4} fontWeight="bold">残高: {balance.toLocaleString()} 円</Text>
+
+      <Heading size="md" mb={2}>収入と支出の比較</Heading>
+      <Box display="flex" gap={4}>
+        <Box flex="1">
+          <Box
+            bg="green.400"
+            height="24px"
+            width={getBarWidth(income)}
+            borderRadius="md"
+            transition="width 0.3s"
+          />
+          <Text textAlign="center" mt={1}>収入</Text>
+        </Box>
+        <Box flex="1">
+          <Box
+            bg="red.400"
+            height="24px"
+            width={getBarWidth(expense)}
+            borderRadius="md"
+            transition="width 0.3s"
+          />
+          <Text textAlign="center" mt={1}>支出</Text>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+export default Record;
+
+
 
 
 // import { useState } from "react"

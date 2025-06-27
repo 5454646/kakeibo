@@ -4,6 +4,7 @@ import { Box, Heading, Text } from "@chakra-ui/react";
 // カテゴリ
 const expenseCategories = ["食費", "日用品", "交通費", "交際費", "趣味", "その他"];
 const incomeCategories = ["給料", "副収入", "お小遣い", "その他"];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 日付の月初・月末取得
 const getMonthRange = (dateStr) => {
@@ -21,7 +22,7 @@ const getMonthRange = (dateStr) => {
 const Record = () => {
   // 入力用
   const [expense, setExpense] = useState({ date: "", reason: "", category: expenseCategories[0], amount: "" });
-  const [income, setIncome] = useState({ date: "", reason: "", category: incomeCategories[0], amount: "" });
+  const [income, setIncome] = useState({ date: "", source: "", category: incomeCategories[0], amount: "" });
 
   // 表示用
   const [expenses, setExpenses] = useState([]);
@@ -42,21 +43,34 @@ const Record = () => {
   useEffect(() => {
     const { start, end } = getMonthRange(month + "-01");
     // 支出取得
-    fetch(`/api/expenses?from=${start}&to=${end}`)
+    fetch(`${API_BASE_URL}/expenses?from=${start}&to=${end}`)
       .then((res) => res.json())
       .then((data) => setExpenses(data))
       .catch(() => setExpenses([]));
     // 収入取得
-    fetch(`/api/incomes?from=${start}&to=${end}`)
+    fetch(`${API_BASE_URL}/incomes?from=${start}&to=${end}`)
       .then((res) => res.json())
       .then((data) => setIncomes(data))
       .catch(() => setIncomes([]));
   }, [month]);
+  useEffect(() => {
+      // APIをfetchする(呼び出す)
+      fetch("http://localhost:8080/api", { method: "GET" })
+        // レスポンスのデータ形式をjsonに設定
+        .then((res) => res.json())
+        // APIから渡されるレスポンスデータ(data)をstateにセットする
+        .then((data) => {
+          setStone(data);
+        });
+    }, []);
+
 
   // 支出追加
   const handleAddExpense = async () => {
     if (!expense.date || !expense.reason || !expense.amount) return;
-    const res = await fetch("/api/expenses", {
+    console.log("Adding expense:", expense);
+    // APIにPOSTリクエスト
+    const res = await fetch(`${API_BASE_URL}/expenses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(expense),
@@ -65,7 +79,8 @@ const Record = () => {
       setExpense({ date: "", reason: "", category: expenseCategories[0], amount: "" });
       // 再取得
       const { start, end } = getMonthRange(month + "-01");
-      fetch(`/api/expenses?from=${start}&to=${end}`)
+      console.log("Fetching expenses for:", start, end);
+      fetch(`${API_BASE_URL}/expenses?from=${start}&to=${end}`)
         .then((res) => res.json())
         .then((data) => setExpenses(data));
     }
@@ -73,17 +88,19 @@ const Record = () => {
 
   // 収入追加
   const handleAddIncome = async () => {
-    if (!income.date || !income.reason || !income.amount) return;
-    const res = await fetch("/api/incomes", {
+    if (!income.date || !income.source || !income.amount) return;
+    console.log("Adding income:", income);
+    // APIにPOSTリクエスト
+    const res = await fetch(`${API_BASE_URL}/incomes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(income),
     });
     if (res.ok) {
-      setIncome({ date: "", reason: "", category: incomeCategories[0], amount: "" });
+      setIncome({ date: "", source: "", category: incomeCategories[0], amount: "" });
       // 再取得
       const { start, end } = getMonthRange(month + "-01");
-      fetch(`/api/incomes?from=${start}&to=${end}`)
+      fetch(`${API_BASE_URL}/incomes?from=${start}&to=${end}`)
         .then((res) => res.json())
         .then((data) => setIncomes(data));
     }
@@ -144,7 +161,7 @@ const Record = () => {
         <Heading size="md" mb={2}>収入の登録</Heading>
         <Box mb={2} display="flex" flexWrap="wrap" gap="8px">
           <input type="date" value={income.date} onChange={e => setIncome({ ...income, date: e.target.value })} />
-          <input type="text" placeholder="収入理由" value={income.reason} onChange={e => setIncome({ ...income, reason: e.target.value })} />
+          <input type="text" placeholder="収入理由" value={income.source} onChange={e => setIncome({ ...income, source: e.target.value })} />
           <select value={income.category} onChange={e => setIncome({ ...income, category: e.target.value })}>
             {incomeCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
@@ -167,7 +184,7 @@ const Record = () => {
             {incomes.map((i, idx) => (
               <tr key={idx}>
                 <td>{i.date}</td>
-                <td>{i.reason}</td>
+                <td>{i.source}</td>
                 <td>{i.category}</td>
                 <td>{Number(i.amount).toLocaleString()} 円</td>
               </tr>
